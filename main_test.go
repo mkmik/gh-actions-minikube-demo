@@ -1,6 +1,8 @@
+// +build xintegration
+
 package main
 
 import "testing"
 
-func TestIntegration(t *testing.T) {
+func TestUnit(t *testing.T) {
 }

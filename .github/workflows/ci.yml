@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  build:
+  test:
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -25,19 +25,28 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  minikube-test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
     - uses: opsgang/ga-setup-minikube@v0.1.1
       with:
-        minikube-version: 1.4.0
+        minikube-version: 1.14.2
         k8s-version: 1.15.1
-    - name: Testing
+
+    - name: K8s setup
       run: |
         minikube config set vm-driver none
         minikube config set kubernetes-version v1.15.1
-        minikube start
+        sudo minikube start
+        sudo chown -R runner: /home/runner/.{mini,}kube/
         minikube update-context
         kubectl cluster-info
-        kubectl get pods -n kube-system
+
+    - name: Testing environment setup
+      run: |
+        kubectl apply -f deploy.yaml
+        kubectl rollout status deployment/demo -w
+        kubectl get svc -o wide
+        kubectl get svc demo -o jsonpath="{$.spec.clusterIP}" >/tmp/ip.txt
+        curl -vLf -m 5 http://$(cat /tmp/ip.txt):80
+
+    - name: Integration tests
+      run: |
+        go test -tags=integration

@@ -1,0 +1,1 @@
+This repo contains a simple example of an integration test running inside a minikube environment on GitHub Actions
