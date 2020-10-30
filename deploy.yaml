@@ -14,13 +14,14 @@ spec:
         app: demo
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.14.2
+      - name: demo
+        image: demo
+        imagePullPolicy: Never
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         readinessProbe:
           httpGet:
-            port: 80
+            port: 8080
             path: /
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -37,4 +38,4 @@ spec:
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 80
+    targetPort: 8080
