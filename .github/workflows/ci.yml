@@ -73,14 +73,10 @@ jobs:
         minikube-version: 1.14.2
         k8s-version: ${{ matrix.k8s }}
 
-    - name: K8s setup
-      run: |
-        minikube config set vm-driver none
-        minikube config set kubernetes-version v${{ matrix.k8s }}
-        sudo minikube start
-        sudo chown -R runner: /home/runner/.{mini,}kube/
-        minikube update-context
-        kubectl cluster-info
+    - name: Setup k8s testing cluster
+      uses: ./.github/actions/setup-minikube
+      with:
+        k8s-version: ${{ matrix.k8s }}
 
     - name: Download docker image
       uses: actions/download-artifact@v2
