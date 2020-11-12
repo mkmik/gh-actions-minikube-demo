@@ -38,17 +38,17 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
 
-    - name: Docker build
-      run: docker build -t demo .
-
-    - name: Docker save
-      run: docker save demo -o /tmp/demo.tar
+    - name: Build container
+      id: build-container
+      uses: ./.github/actions/build-container
+      with:
+        docker-image-name: demo
 
     - name: Docker upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: demo-image
-        path: /tmp/demo.tar
+        path: ${{ steps.build-container.outputs.docker-image-path }}
 
   integration:
     name: Integration
@@ -82,4 +82,4 @@ jobs:
       uses: ./.github/actions/integration
       with:
         k8s-version: ${{ matrix.k8s }}
-        docker-image: demo.tar
+        docker-image-path: demo.tar

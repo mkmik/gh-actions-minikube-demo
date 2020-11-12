@@ -4,7 +4,7 @@ inputs:
   k8s-version:
     description: 'K8s version'
     required: true
-  docker-image:
+  docker-image-path:
     description: 'tarball with the docker image'
     required: true
 runs:
@@ -23,7 +23,7 @@ runs:
   - name: Load docker image
     shell: bash
     run: |
-      docker load -i ${{ inputs.docker-image }}
+      docker load -i ${{ inputs.docker-image-path }}
       docker inspect demo
 
   - name: Testing environment setup
