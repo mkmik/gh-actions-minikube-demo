@@ -38,17 +38,17 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
 
-    - name: Docker build
-      run: docker build -t demo .
-
-    - name: Docker save
-      run: docker save demo -o /tmp/demo.tar
+    - name: Build container
+      id: build-container
+      uses: ./.github/actions/build-container
+      with:
+        docker-image-name: demo
 
     - name: Docker upload artifact
       uses: actions/upload-artifact@v2
       with:
         name: demo-image
-        path: /tmp/demo.tar
+        path: ${{ steps.build-container.outputs.docker-image-path }}
 
   integration:
     name: Integration
@@ -73,33 +73,13 @@ jobs:
         minikube-version: 1.14.2
         k8s-version: ${{ matrix.k8s }}
 
-    - name: K8s setup
-      run: |
-        minikube config set vm-driver none
-        minikube config set kubernetes-version v${{ matrix.k8s }}
-        sudo minikube start
-        sudo chown -R runner: /home/runner/.{mini,}kube/
-        minikube update-context
-        kubectl cluster-info
-
     - name: Download docker image
       uses: actions/download-artifact@v2
       with:
         name: demo-image
 
-    - name: Load docker image
-      run: |
-        docker load -i demo.tar
-        docker inspect demo
-
-    - name: Testing environment setup
-      run: |
-        kubectl apply -f deploy.yaml
-        kubectl rollout status deployment/demo -w --timeout=1m || kubectl get pod
-        kubectl get svc -o wide
-        kubectl get svc demo -o jsonpath="{$.spec.clusterIP}" >/tmp/ip.txt
-
-    - name: Integration tests
-      run: |
-        export SERVER_ADDR=http://$(cat /tmp/ip.txt):80
-        go test -tags=integration
+    - name: Integration test
+      uses: ./.github/actions/integration
+      with:
+        k8s-version: ${{ matrix.k8s }}
+        docker-image-path: demo.tar

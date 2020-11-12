@@ -1,0 +1,24 @@
+name: 'Build container'
+description: 'Build container'
+inputs:
+  docker-image-name:
+    description: 'name and tag of the docker image'
+    required: true
+outputs:
+  docker-image-path:
+    description: 'Filesystem path of exported docker image'
+    value: ${{ steps.docker-save.outputs.path }}
+runs:
+  using: "composite"
+  steps:
+
+  - name: Docker build
+    shell: bash
+    run: docker build -t ${{ inputs.docker-image-name }} .
+
+  - name: Docker save
+    id: 'docker-save'
+    shell: bash
+    run: |
+      docker save ${{ inputs.docker-image-name }} -o /tmp/demo.tar
+      echo "::set-output name=path::/tmp/demo.tar"
