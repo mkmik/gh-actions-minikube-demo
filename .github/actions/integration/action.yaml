@@ -1,0 +1,41 @@
+name: 'Integration test'
+description: 'Integration test'
+inputs:
+  k8s-version:
+    description: 'K8s version'
+    required: true
+  docker-image:
+    description: 'tarball with the docker image'
+    required: true
+runs:
+  using: "composite"
+  steps:
+  - name: K8s setup
+    shell: bash
+    run: |
+      minikube config set vm-driver none
+      minikube config set kubernetes-version v${{ inputs.k8s-version }}
+      sudo minikube start
+      sudo chown -R runner: /home/runner/.{mini,}kube/
+      minikube update-context
+      kubectl cluster-info
+
+  - name: Load docker image
+    shell: bash
+    run: |
+      docker load -i ${{ inputs.docker-image }}
+      docker inspect demo
+
+  - name: Testing environment setup
+    shell: bash
+    run: |
+      kubectl apply -f deploy.yaml
+      kubectl rollout status deployment/demo -w --timeout=1m || kubectl get pod
+      kubectl get svc -o wide
+      kubectl get svc demo -o jsonpath="{$.spec.clusterIP}" >/tmp/ip.txt
+
+  - name: Integration tests
+    shell: bash
+    run: |
+      export SERVER_ADDR=http://$(cat /tmp/ip.txt):80
+      go test -tags=integration

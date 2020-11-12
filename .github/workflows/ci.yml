@@ -73,29 +73,13 @@ jobs:
         minikube-version: 1.14.2
         k8s-version: ${{ matrix.k8s }}
 
-    - name: Setup k8s testing cluster
-      uses: ./.github/actions/setup-minikube
-      with:
-        k8s-version: ${{ matrix.k8s }}
-
     - name: Download docker image
       uses: actions/download-artifact@v2
       with:
         name: demo-image
 
-    - name: Load docker image
-      run: |
-        docker load -i demo.tar
-        docker inspect demo
-
-    - name: Testing environment setup
-      run: |
-        kubectl apply -f deploy.yaml
-        kubectl rollout status deployment/demo -w --timeout=1m || kubectl get pod
-        kubectl get svc -o wide
-        kubectl get svc demo -o jsonpath="{$.spec.clusterIP}" >/tmp/ip.txt
-
-    - name: Integration tests
-      run: |
-        export SERVER_ADDR=http://$(cat /tmp/ip.txt):80
-        go test -tags=integration
+    - name: Integration test
+      uses: ./.github/actions/integration
+      with:
+        k8s-version: ${{ matrix.k8s }}
+        docker-image: demo.tar
